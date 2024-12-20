@@ -5,51 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Chat</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <style>
-        .chat-container {
-            height: calc(100vh - 200px);
-        }
-        .messages {
-            height: calc(100% - 60px);
-            overflow-y: auto;
-        }
-        .loading {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-        .error-message {
-            color: #e53e3e;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-        }
-        .suggestions {
-            position: absolute;
-            width: 100%;
-            z-index: 10;
-        }
-        .suggestion-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin: 2px 0;
-            border-radius: 4px;
-        }
-        .suggestion-item:hover {
-            background-color: #f3f4f6;
-        }
-        .input-loading {
-            background-image: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ccc"%3E%3Ccircle cx="12" cy="12" r="10" stroke-width="4" stroke-dasharray="15.9" stroke-dashoffset="0"%3E%3CanimateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/%3E%3C/circle%3E%3C/svg%3E');
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 20px 20px;
-        }
-        .relative {
-            position: relative;
-        }
-    </style>
+    <!-- CSS will go here -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
+        <!-- Setup Container -->
         <div id="setup-container" class="max-w-md mx-auto bg-white rounded-lg shadow p-6">
             <h1 class="text-2xl font-bold mb-4">Welcome to Global Chat</h1>
             <div class="mb-4">
@@ -74,17 +36,24 @@
             <button id="start-chat" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Start Chat</button>
         </div>
 
-        <div id="chat-container" class="max-w-4xl mx-auto bg-white rounded-lg shadow hidden">
-            <div class="p-4">
+        <!-- Chat Container -->
+        <div id="chat-container" class="max-w-6xl mx-auto bg-white rounded-lg shadow hidden">
+            <!-- Back Button -->
+            <div class="p-4 border-b">
                 <button id="back-button" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
                     ← Back
                 </button>
             </div>
-            <div class="grid grid-cols-3 gap-4 p-4">
-                <div class="col-span-1">
+            
+            <!-- Main Grid Layout -->
+            <div class="grid grid-cols-12 gap-4 p-4">
+                <!-- Avatar Section -->
+                <div class="col-span-3">
                     <img id="avatar" class="w-full rounded-lg shadow" alt="Local Guide">
                 </div>
-                <div class="col-span-2">
+                
+                <!-- Chat Section -->
+                <div class="col-span-6">
                     <div class="chat-container">
                         <div id="messages" class="messages space-y-4 mb-4"></div>
                         <div class="flex space-x-2">
@@ -93,10 +62,47 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Country Info Section -->
+                <div class="col-span-3">
+                    <div id="info-panel" class="space-y-4">
+                        <!-- Weather Card -->
+                        <div id="weather-card" class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-lg font-semibold mb-2">Weather</h3>
+                            <div id="weather-content" class="hidden">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p id="weather-temp" class="text-3xl font-bold"></p>
+                                        <p id="weather-desc" class="text-gray-600"></p>
+                                    </div>
+                                    <img id="weather-icon" class="w-16 h-16" src="" alt="Weather">
+                                </div>
+                                <div class="mt-2">
+                                    <p id="weather-location" class="text-sm text-gray-600"></p>
+                                    <p id="weather-time" class="text-sm text-gray-600"></p>
+                                </div>
+                            </div>
+                            <div id="weather-loading" class="py-4 text-center text-gray-500">
+                                Loading weather...
+                            </div>
+                        </div>
+
+                        <!-- Country Info Card -->
+                        <div id="country-card" class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-lg font-semibold mb-2">Country Information</h3>
+                            <div id="country-content" class="hidden">
+                                <div id="country-details" class="text-sm space-y-2"></div>
+                            </div>
+                            <div id="country-loading" class="py-4 text-center text-gray-500">
+                                Loading information...
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
+    
     <script>
         let chatMessages = [];
         let session_id = null;
@@ -132,27 +138,19 @@
                     } finally {
                         this.classList.remove('input-loading');
                     }
-                }, 300); // 300ms debounce delay
+                }, 300);
             } else {
                 document.getElementById('country-suggestions').classList.add('hidden');
                 this.classList.remove('input-loading');
             }
         });
 
-        // Add cleanup for timeouts
-        window.addEventListener('beforeunload', function() {
-            if (countryTimeout) {
-                clearTimeout(countryTimeout);
-            }
-        });
-
         function handleCountryVerification(verification) {
             const suggestionsDiv = document.getElementById('country-suggestions');
             const suggestionsList = suggestionsDiv.querySelector('ul');
-            suggestionsList.innerHTML = ''; // Clear previous suggestions
+            suggestionsList.innerHTML = '';
 
             if (verification.startsWith('Did you mean:')) {
-                // Extract the full suggestion including flag emoji if present
                 const suggestion = verification.split(':')[1].trim().replace('?', '');
                 suggestionsList.innerHTML = `
                     <li class="suggestion-item flex items-center gap-2" 
@@ -163,7 +161,6 @@
                 `;
                 suggestionsDiv.classList.remove('hidden');
             } else if (!verification.includes('Invalid')) {
-                // Direct match with flag emoji
                 document.getElementById('country-input').value = verification;
                 suggestionsDiv.classList.add('hidden');
             } else {
@@ -174,6 +171,44 @@
         function selectCountry(country) {
             document.getElementById('country-input').value = country;
             document.getElementById('country-suggestions').classList.add('hidden');
+        }
+
+        // New function to fetch country info and weather
+        async function fetchCountryInfo(country) {
+            try {
+                const response = await fetch('/get_country_info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ country })
+                });
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    updateWeatherCard(data.weather);
+                    updateCountryCard(data.country_info);
+                }
+            } catch (error) {
+                console.error('Error fetching country info:', error);
+            }
+        }
+
+        function updateWeatherCard(weather) {
+            document.getElementById('weather-loading').classList.add('hidden');
+            document.getElementById('weather-content').classList.remove('hidden');
+            
+            document.getElementById('weather-temp').textContent = `${weather.temperature}°C`;
+            document.getElementById('weather-desc').textContent = weather.condition;
+            document.getElementById('weather-location').textContent = weather.city;
+            document.getElementById('weather-time').textContent = `Local time: ${weather.local_time}`;
+            document.getElementById('weather-icon').src = `http://openweathermap.org/img/w/${weather.icon}.png`;
+        }
+
+        function updateCountryCard(info) {
+            document.getElementById('country-loading').classList.add('hidden');
+            document.getElementById('country-content').classList.remove('hidden');
+            document.getElementById('country-details').innerHTML = info.split('\n').map(line => 
+                `<p>${line}</p>`
+            ).join('');
         }
 
         // Chat handlers
@@ -188,7 +223,6 @@
 
             try {
                 document.getElementById('start-chat').classList.add('loading');
-                console.log('Starting chat with:', { country, gender, session_id });  // Debug log
                 
                 const response = await fetch('/start_chat', {
                     method: 'POST',
@@ -197,7 +231,6 @@
                 });
 
                 const data = await response.json();
-                console.log('Server response:', data);  // Debug log
                 
                 if (data.status === 'error') {
                     throw new Error(data.error);
@@ -213,7 +246,6 @@
                 }
 
                 if (data.message) {
-                    console.log('Adding initial message:', data.message);  // Debug log
                     setTimeout(() => {
                         addMessage('assistant', data.message, true);
                         const messages = document.getElementById('messages');
@@ -222,9 +254,12 @@
                 }
 
                 chatMessages = data.messages;
+                
+                // Fetch country info after successful chat start
+                fetchCountryInfo(country);
 
             } catch (error) {
-                console.error('Error:', error);  // Debug log
+                console.error('Error:', error);
                 alert('Error starting chat: ' + error.message);
             } finally {
                 document.getElementById('start-chat').classList.remove('loading');
@@ -241,9 +276,6 @@
             document.getElementById('setup-container').classList.remove('hidden');
             document.getElementById('messages').innerHTML = '';
             chatMessages = [];
-            // Consider clearing session_id here if you want to start a new chat every time.
-            // localStorage.removeItem('session_id');
-            // session_id = null;
         });
 
         async function sendMessage() {
@@ -261,7 +293,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             user_input: message,
-                            session_id: session_id // Include session_id
+                            session_id: session_id
                         })
                     });
 
@@ -271,7 +303,7 @@
                     }
 
                     addMessage('assistant', data.reply);
-                    chatMessages = data.messages; // Update the conversation history
+                    chatMessages = data.messages;
 
                 } catch (error) {
                     addMessage('system', 'Error: Could not send message');
@@ -281,12 +313,10 @@
             }
         }
 
-        // Modified addMessage function
         function addMessage(role, content, isInitial = false) {
             const messages = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             
-            // Check if the message is from the assistant and if it's the initial message
             if (role === 'assistant' && isInitial) {
                 messageDiv.className = `p-3 rounded-lg bg-gray-100 mr-12 initial-message`;
             } else {
@@ -298,7 +328,7 @@
             messages.scrollTop = messages.scrollHeight;
         }
 
-        // On page load, check if a session_id exists in local storage
+        // On page load, check for session_id
         window.onload = () => {
             session_id = localStorage.getItem('session_id');
         };
